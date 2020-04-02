@@ -69,6 +69,11 @@ void deposit(int amount){
 	}
 
 	//must release lock before notify
+	//notify_all wakes ALL threads
+	//waiting on this cv.  One will
+	//aquire the mutex, check condition
+	//in while and move forward
+	//the others go back to sleep
 	cv.notify_all();
 }
 

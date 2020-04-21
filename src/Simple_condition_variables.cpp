@@ -16,6 +16,7 @@ using namespace std;
 mutex m;
 int balance = 0;
 bool deposit_made = false;
+bool transactionsFinished = false;
 
 //void withdraw(int amount){
 //	//the bad idea, a busy wait
@@ -54,8 +55,11 @@ void withdraw(int amount){
 	balance-=amount;
 	if (balance <0)
 		cout<<"You are overdrawn"<<endl;
-	else
-		cout<<"no worries"<<endl;
+	else{
+		transactionsFinished = true;
+		cv.notify_all();
+		cout<<"withdraw made"<<endl;
+	}
 }
 
 void deposit(int amount){
@@ -76,13 +80,26 @@ void deposit(int amount){
 	//the others go back to sleep
 	cv.notify_all();
 }
+void checkAmount(){
+	unique_lock<mutex> lck(m);
+	while(!transactionsFinished){
+		cv.wait(lck);
+	}
+	cout<<"Your Amount Is: "<<balance<<endl;
+}
 
 int main() {
 	//how do you ensure you deposit before withdraw?
+	thread t4(checkAmount);
+	thread t3(withdraw,30);
 	thread t1(deposit,100);
 	thread t2(withdraw,50);
 
+
+	t4.join();
+	t3.join();
 	t1.join();
 	t2.join();
+
 	return 0;
 }
